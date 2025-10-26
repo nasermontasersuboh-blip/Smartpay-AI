@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SmartPay AI — الدفع الذكي</title>
+  <style>
+    :root { --bg:#0b0d12; --card:#121624; --text:#e7ebf3; --muted:#a8b2c3; --accent:#4cc9f0; --ok:#22c55e; --warn:#f59e0b; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;}
+    .wrap { max-width: 680px; margin: 48px auto; padding: 0 16px;}
+    .card { background:var(--card); border:1px solid #1f2640; border-radius:16px; padding:24px; box-shadow: 0 8px 30px rgba(0,0,0,.25); }
+    h1 { margin:0 0 8px; font-size: 1.6rem; }
+    p.lead { margin:0 0 16px; color:var(--muted); }
+    label { display:block; margin:14px 0 6px; color:var(--muted); }
+    input, select, button { width:100%; padding:12px 14px; border-radius:12px; border:1px solid #2a3358; background:#0f1320; color:var(--text); }
+    button { background:var(--accent); color:#001018; border:none; font-weight:700; margin-top:16px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:700; }
+    .ok { background:#193e2a; color:var(--ok); }
+    .warn { background:#3a2e12; color:var(--warn); }
+    .result { margin-top:16px; font-size:1.1rem; }
+    .small { font-size:.9rem; color:var(--muted); }
+    .rtl { direction: rtl; text-align: right; margin-top: 16px; }
+    a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>SmartPay AI — الدفع الذكي</h1>
+      <p class="lead">AI decides <b>when/why</b> to pay; Arc + USDC executes <b>how</b>.</p>
+
+      <form id="paymentForm">
+        <div class="row">
+          <div>
+            <label>Amount (USD)</label>
+            <input type="number" id="amount" min="0" step="0.01" required placeholder="e.g. 25.00">
+          </div>
+          <div>
+            <label>Type</label>
+            <select id="type" required>
+              <option value="single">Single</option>
+              <option value="subscription">Subscription</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit">Analyze Payment</button>
+      </form>
+
+      <div id="result" class="result"></div>
+
+      <div class="rtl small">
+        <div><b>الهدف:</b> نظام مدفوعات ذكي يستخدم الذكاء الاصطناعي لاتخاذ قرار الدفع، بينما تقوم Arc و USDC بالتنفيذ.</div>
+        <div><b>جرّب:</b> أدخل مبلغًا ونوع الدفع واضغط تحليل.</div>
+      </div>
+    </div>
+
+    <p class="small" style="margin-top:16px">
+      API: <code>POST /analyze-payment {"amount": 50, "type":"single"}</code>
+    </p>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    $("paymentForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = Number($("amount").value);
+      const type = $("type").value;
+      $("result").innerHTML = "Checking…";
+      try {
+        const r = await fetch("/analyze-payment", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ amount, type })
+        });
+        const data = await r.json();
+        if (r.ok) {
+          const status = data.decision.includes("review") ? "warn" : "ok";
+          $("result").innerHTML = `<span class="badge ${status}">${data.decision}</span>`;
+        } else {
+          $("result").innerHTML = `<span class="badge warn">Error: ${data.error || r.status}</span>`;
+        }
+      } catch (e) {
+        $("result").innerHTML = `<span class="badge warn">Network error</span>`;
+      }
+    });
+  </script>
+</body>
+</html>
